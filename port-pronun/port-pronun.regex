@@ -1,0 +1,31 @@
+[ s -> z || vowel _ vowel]
+.o.
+[ c h -> %$ ] 
+.o.
+[ c -> s || _ [e|i|é|í] ]
+.o.
+[ c -> k ] 
+.o.
+[ s s -> s 0 ]
+.o.
+[ z -> s || _ .#. ]
+.o.
+[ ç -> s ]
+.o.				! break sibilants
+[ l h -> L 0 ]
+.o.
+[ n h -> N 0]
+.o.
+[ h -> 0 ]
+.o.
+[ r r -> R 0 ]
+.o.
+[ r -> R || .#. _ ] 
+.o.				! vowels
+[ e -> i || _ .#. , .#. p _ r , _ s .#. ]
+.o.
+[ o -> u || _ .#. , _ s .#. ]
+.o.				! palatals
+[ t -> C || _ i ] 
+.o.
+[ d -> J || _ i ] ; 

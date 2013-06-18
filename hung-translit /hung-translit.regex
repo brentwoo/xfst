@@ -1,0 +1,59 @@
+[ a -> ɒ ]
+.o.
+[ á 0 -> a ː ]
+.o.
+[ e -> ɛ ]
+.o.
+[ é -> e ː ]
+.o.
+[ í -> i ː ]
+.o.
+[ ó -> o ː ]
+.o.
+[ ö -> ø ]
+.o.
+[ ő -> ø ː ]
+.o.
+[ ú -> u ː ]
+.o.
+[ ü -> y ]
+.o.
+[ ű -> y ː ]
+.o.
+[ j -> ʝ ]
+.o.
+[ w -> v ] 
+.o.
+[ x 0 -> k s ]
+.o.
+[ n -> ŋ || _ [k|g] ]
+.o.!trigraph
+[ d z s -> d ʒ 0 ]
+.o.!long consonants
+[ s s z -> s s 0 ]
+.o.
+[ t t y -> c c 0 ]
+.o.
+[ n n y -> ɲ ɲ 0 ]
+.o.
+[ d d z s -> d ʒ : 0 ] 
+.o.!digraphs
+[ c s -> t ʃ ]
+.o.
+[ g y -> ɟ 0 ]
+.o.
+[ l y -> j 0 ]
+.o.
+[ n y -> ɲ 0 ]
+.o.
+[ t y -> c 0 ]
+.o.
+[ s z -> s 0 ]
+.o.
+[ c 0 -> t s ]
+.o.
+[ z s -> ʒ 0 ]
+.o.!exceptions
+[ s -> ʃ ]
+.o.
+[ y -> j ];
