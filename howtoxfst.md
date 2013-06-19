@@ -1,5 +1,48 @@
+## About XFST
 
-## How to test a transliterator
+* Constructing finite-state automata/transducers
+
+* All regular expressions can be expressed as FSA
+
+
+
+
+
+### Mechanics
+
+* All commands end with `;`
+* Remember to type `{dog} | {cat}` or `d o g | c a t` (with spaces), NOT `dog|cat`
+
+
+* Stack
+	* Last-in, first-out (LIFO): push, pop
+* Variables
+	* Held in memory until undefined
+
+`save/load stack/defined filename.fst/filename.vars`
+
+
+## Exercise 1: Make graphic of FSA
+
+Have `plg2dot.py` script. Python and GraphViz (which gives you `dot) must be installed.
+
+	xfst[0]: read regex ( r e )[ l o c k | c o r k ][ i n g | e d | s | 0 ] ;
+	xfst[1]: print words	!see all the words generated
+	xfst[1]: print net	!get description of FSA
+	xfst[1]: write prolog > corked.plg	!convert to Prolog file
+	xfst[1]: exit
+	$ python plg2dot.py corked.plg > corked.dot
+	$ dot -Tpdf corked.dot -o corked.pdf
+
+
+
+
+
+
+
+
+
+## Exercise 2: How to test a transliterator
 
 In XFST:
 
