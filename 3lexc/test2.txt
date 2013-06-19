@@ -1,0 +1,43 @@
+Multichar_Symbols
+  +N +Sg +Pl +V +Base +Past +PastPart +Sg3 +PresPart
+
+LEXICON Root
+  Nouns; Verbs;
+
+LEXICON Nouns
+  line N;
+
+LEXICON Verbs
+  dine V; line V; stop V;
+  swim VIrreg; swim:swam VIrregPast; swim:swum
+VIrregPastPart;
+
+LEXICON N
+  +N:0 NounInfl;
+
+LEXICON NounInfl
+    +Sg:0 #; +Pl:s #;
+
+LEXICON V
+  +V:0 RegVerbConj;
+
+LEXICON RegVerbConj
+  VCommon; RegPast;  RegPastPart;
+  
+LEXICON VCommon
+  +Base:0 #; +Sg3:s #; 0+PresPart:^ing #;
+
+LEXICON RegPast
+  0+Past:^ed #; 
+
+LEXICON RegPastPart
+  0+PastPart:^ed #;
+
+LEXICON VIrreg
+  +V:0 VCommon;
+
+LEXICON VIrregPast
+  +V+Past:0 #;
+
+LEXICON VIrregPastPart
+  +V+PastPart:0 #;

@@ -1,30 +1,43 @@
-## About XFST
+# Machine Morphology :: XFST
 
-* Constructing finite-state automata/transducers
+*Or, yet another linguistic tool they didn't tell you about in LING 101*
 
-* All regular expressions can be expressed as FSA
+![Sample FST](s.png)
+
+# XFST
+
+* Construct finite-state machines to represent relations between morphemes and features.
+
+* All regular expressions can be expressed as FSA → we should be able to represent most morphological-phonological phenomena.
 
 
+## Installation
 
+* Get XFST at <http://www.fsmbook.com>
+* Good idea to have Python and [GraphViz][].
 
+## Basics
 
-### Mechanics
+Don't forget:
 
 * All commands end with `;`
 * Remember to type `{dog} | {cat}` or `d o g | c a t` (with spaces), NOT `dog|cat`
 
+XFST uses the "stack":
 
 * Stack
 	* Last-in, first-out (LIFO): push, pop
 * Variables
 	* Held in memory until undefined
 
-`save/load stack/defined filename.fst/filename.vars`
+Dealing with them:
+
+	{save/load} {stack/defined} filename.foo
 
 
-## Exercise 1: Make graphic of FSA
+# Exercise 1: Make graphic of FSA
 
-Have `plg2dot.py` script. Python and GraphViz (which gives you `dot) must be installed.
+Have `plg2dot.py` script. Python and GraphViz (which gives you `dot`) must be installed.
 
 	xfst[0]: read regex ( r e )[ l o c k | c o r k ][ i n g | e d | s | 0 ] ;
 	xfst[1]: print words	!see all the words generated
@@ -33,16 +46,8 @@ Have `plg2dot.py` script. Python and GraphViz (which gives you `dot) must be ins
 	xfst[1]: exit
 	$ python plg2dot.py corked.plg > corked.dot
 	$ dot -Tpdf corked.dot -o corked.pdf
-
-
-
-
-
-
-
-
-
-## Exercise 2: How to test a transliterator
+	
+# Exercise 2: How to test a transliterator
 
 In XFST:
 
@@ -81,5 +86,51 @@ To make a `.vars` file (don''t forget semicolon at end of xfst commands)
 	xfst[0]: print net front_vowel
 		s0: e -> fs1, i -> fs1, é -> fs1, í -> fs1.
 	xfst[0]: load defined vowels.vars
+	
+# Exercise 3: Using lexc to compose morphologies
+
+**lexc** is the companion to xfst that makes making FST much easier to visualize. Read more at the official [UPenn Documentation on Lexc][LEXC])
+
+Here's a sample lexc lexicon:
+
+	Multichar_Symbols +Verb +Noun +Pl +Sg +3rd +Past +Pres +Fut +Pers +Prog
+
+	LEXICON Root
+	walk V ; 
+	talk V ;
+	
+	LEXICON V
+	+Verb+Sg+3rd:s # ;
+	+Verb+Past:ed # ; 
+
+At the top we define Multichar_Symbols.
+
+Each block is called a **(sub)lexicon**. One must have the name `Root`. 
+
+* Heading: LEXICON {name}
+* Entry: {form} {continuation class} ;
+
+Continuation class can be another sublexicon's name or the terminator symbol `#`.
+
+Testing the network in XFST:
+
+	xfst[0]: read lexc < input.txt
+	xfst[1]: compose net	!composites all networks on stack, top-down
+	
+	xfst[1]: up walks
+	walk+Verb+Sg+3rd
+	
+Try using `print upper` and `print lower` to see the list of words.
+
+We can re-use Exercise 1 to print a graph of this lexc network too.
+
+	$ xfst -f lexc2plg.xfst
+	[copied from above]
+	$ python plg2dot.py test.plg > test.dot
+	$ dot -Tpdf test.dot -o test.pdf
 
 
+
+
+[LEXC]: http://www.cis.upenn.edu/~cis639/docs/lexc.html#Transducer
+[GraphViz]: http://www.graphviz.org/

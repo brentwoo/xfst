@@ -1,0 +1,13 @@
+! this is a comment line
+
+Multichar_Symbols +Verb +Noun +Pl +Sg +3rd +Past +Pres +Fut +Pers +Prog
+
+LEXICON Root
+walk V ; 
+talk V ;
+
+LEXICON V
++Verb+Sg+3rd:s # ;
++Verb+Past:ed # ; 
++Verb+Prog:ing # ;
++Verb+Pres: # ;

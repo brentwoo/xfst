@@ -1,0 +1,6 @@
+clear
+set char-encoding utf-8
+read lexc < test2.txt
+compose net
+save stack test2.fst
+write prolog > test2.plg
