@@ -1,0 +1,31 @@
+digraph net_100834200 {
+	rankdir=LR;
+	size="8,5";
+	node [shape = doublecircle]
+		8 11 ;
+
+	node [shape = circle]
+		9 2 3 0 1 6 7 4 5 12 10;
+
+	null [shape = plaintext label=""];
+	null -> 0;
+
+	 0 -> 1 [label="c"];
+	 0 -> 2 [label="l"];
+	 0 -> 3 [label="r"];
+	 1 -> 4 [label="o"];
+	 2 -> 5 [label="o"];
+	 3 -> 6 [label="e"];
+	 4 -> 7 [label="r"];
+	 5 -> 7 [label="c"];
+	 6 -> 1 [label="c"];
+	 6 -> 2 [label="l"];
+	 7 -> 8 [label="k"];
+	 8 -> 9 [label="e"];
+	 8 -> 10 [label="i"];
+	 8 -> 11 [label="s"];
+	 9 -> 11 [label="d"];
+	 10 -> 12 [label="n"];
+	 12 -> 11 [label="g"];
+}
+

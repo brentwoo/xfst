@@ -1,0 +1,304 @@
+# -*- coding: utf-8 -*-
+
+# finnish-ot-prosody.script
+
+# Copyright (C) 2004  Lauri Karttunen
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+
+# This script maps Finnish words into a prosodic representation
+# that splits the words into syllables, adds primary and secondary
+# stress marks, and organizes the syllables into feet. For example,
+# the input "ilmoittautumisesta" 'registering' (Sg. Elative) becomes
+#
+#     (íl.moit).(tàu.tu).mi.(sès.ta)
+#
+# where the acute accent on the first vowel indicates primary stress,
+# the grave accents mark secondary stress and feet are enclosed in
+# parentheses. 
+
+# Note that this script is encoded in utf-8. To run it,
+# you should start fst in utf-8 mode:
+#
+#     xfst -utf8 -l finnish-ot-prosody.fst
+
+# The version of xfst that comes with the Book is not utf8-enabled
+# To check about the availability of a utf8-enabled version of xfst,
+# please write to karttunen@parc.com.
+
+# The analysis that the script implements comes from Paul Kiparsky's paper
+# "Finnish Noun Inflection" in Generative Approaches to Finnic and
+# Saami Linguistics, Diane Nelson and Satu Manninen (eds.), pp.109-161,
+# CSLI Publications, 2003. It covers only the basic system presented
+# on pages 111-112 of the paper and does not cover the extensions
+# in the latter part of the paper.
+
+# The system encoded in the script consists of a Gen function
+# that produces a vast number of output candidates for each input
+# word. The candidates are subject to nine ranked optimality
+# constraints: Clash, AlignLeft, MainStress, FootBin, Lapse, NonFinal,
+# StressToWeight, Parse, and AllFeetFirst.
+
+# Lenient composition is used to guarantee that at least one output
+# form survives, no matter how suboptimal it is.
+
+# Lenient composition is an operation, .O. (capital O), is part of the xfst
+# language but it is not described in the Beesley & Karttunen book. To
+# learn about lenient composition, please consult Karttunen's paper on
+# "The Proper Treatment of Optimality in Phonology".
+
+# You may find it interesting to compare this OT implementation of
+# Kiparsky's analysis with a non-OT account for the same data.
+# See the Finnish Non-OT Prosody script.
+
+################################## DATA ##################################
+
+define FinnWords {kalastelet} | {kalasteleminen} | {ilmoittautuminen} |
+                 {järjestelmättömyydestänsä} | {kalastelemme} |
+                 {ilmoittautumisesta} | {järjestelmällisyydelläni} |
+                 {järjestelmällistämätöntä} | {voimisteluttelemasta} |
+                 {opiskelija} | {opettamassa} | {kalastelet} |
+                 {strukturalismi} | {onnittelemanikin} | {mäki} |
+                 {perijä} | {repeämä} | {ergonomia} | {puhelimellani} |
+                 {matematiikka} | {puhelimistani} | {rakastajattariansa} |
+                 {kuningas} | {kainostelijat} | {ravintolat} | 
+                 {merkonomin} ;
+
+######################### BASIC DEFINITIONS #############################
+
+define HighV [u | y | i];                          # High vowel
+define MidV  [e | o | ö];                          # Mid vowel
+define LowV  [a | ä] ;                             # Low vowel
+define USV [HighV | MidV | LowV];                  # Unstressed Vowel
+
+define C [b | c | d | f | g | h | j | k | l | m |
+          n | p | q | r | s | t | v | w | x | z];  # Consonant
+
+define MSV [á | é | í | ó | ú | ý | "ä́" | "ö́"];
+define SSV [à | è | ì | ò | ù | "ỳ" | "ä̀" | "ö̀"];
+define SV [MSV | SSV];                             # Stressed vowel
+define V [USV | SV] ;                              # Vowel
+
+define P [V | C];                                  # Phone
+define B [[\P+] | .#.];                            # Boundary
+
+define E .#. | ".";                                # Edge
+define SB [~$"." "." ~$"."];                       # At most one syllable boundary
+
+define Light [C* V];                               # Light syllable
+define Heavy [Light P+];                           # Heavy syllable
+
+define S [Heavy | Light];                          # Syllable
+define SS [S & $SV];                               # Stressed syllable
+define US [S & ~$SV];                              # Unstressed syllable
+define MSS [S & $MSV] ;                            # Syllable with main stress
+define BF [S "." S];                               # Binary foot
+
+
+################################### GEN ##################################
+
+# A diphthong is a combination of two unlike vowels that together form
+# the nucleus of a syllable. In general, Finnish diphthongs end in a high vowel.
+# However, there are three exceptional high-mid diphthongs: ie, uo, and yö
+# that historically come from long ee, oo, and öö, respectively.
+# All other adjacent vowels must be separated by a syllable boundary.
+
+define MarkNonDiphthongs [ [. .] -> "." || [HighV | MidV] _ LowV, # i.a, e.a
+                                           i _ [MidV - e],        # i.o, i.ö
+                                           u _ [MidV - o],        # u.e
+                                           y _ [MidV - ö] ];      # y.e
+
+# The general syllabification rule has exceptions. In particular, loan
+# words such as ate.isti 'atheist' must be partially syllabified in the
+# lexicon.
+
+define Syllabify C* V+ C* @-> ... "." || _ C V ;
+
+# Optionally adds primary or secondary stress to the first vowel
+# of each syllable.
+
+define Stress a (->) á|à, e (->) é|è, i (->) í|ì, o (->) ó|ò,
+              u (->) ú|ù, y (->) ý|"ỳ", ä (->) "ä́"|"ä̀", ö (->) "ö́"|"ö̀"
+              || E C* _ ;
+
+# Scan the word, optionally dividing it to any combination of
+# unary, binary, and ternary feet. Each foot must contain at least
+# one stressed syllable.
+
+define Scan [[S ("." S ("." S)) & $SS] (->) "(" ... ")" || E _ E] ;
+
+# In keeping with the idea of "richness of the base", the Gen
+# function produces a great number of output candidates for
+# even short words. Long words have millions of possible outputs.
+
+define Gen [MarkNonDiphthongs .o. Syllabify .o. Stress .o. Scan];
+
+######################### OT CONSTRAINTS #############################
+
+# We use asterisks to mark constraint violations. Ordinary constraints
+# such as Lapse assign single asterisks as the violation marks and the
+# candidate with the fewest number is selected. Gradient constraints
+# such as AllFeetFirst mark violations with sequences of asterisks.
+# The number increases with distance from the word edge.
+
+# Every instance of * in an output candidate is a violation.
+
+define Viol ${*};
+
+# We prune candidates with "lenient composition" that eliminates
+# candidates that violate the constraint provided that at least
+# one output candidate survives.
+
+define Viol0 ~Viol;        # No violations
+define Viol1 ~[Viol^2];    # At most one violation
+define Viol2 ~[Viol^3];    # At most two violations
+define Viol3 ~[Viol^4];    # etc.
+define Viol4 ~[Viol^5];
+define Viol5 ~[Viol^6];
+define Viol6 ~[Viol^7];
+define Viol7 ~[Viol^8];
+define Viol8 ~[Viol^9];
+define Viol9 ~[Viol^10];
+define Viol10 ~[Viol^11];
+define Viol11 ~[Viol^12];
+define Viol12 ~[Viol^13];
+define Viol13 ~[Viol^14];
+define Viol14 ~[Viol^15];
+define Viol15 ~[Viol^16];
+
+# This eliminates the violation marks after the candidate set has
+# been pruned by a constraint.
+
+define Pardon {*} -> 0;
+
+########################## CONSTRAINTS ##############################
+
+# In this section we define nine constraints for Finnish prosody,
+# listed in the order of their ranking: MainStress, Clash, AlignLeft,
+# FootBin, Lapse, NonFinal, StressToWeight, Parse, and AllFeetFirst.
+# For the one inviolable constraint, we assign no violation marks.
+# Clash, Align-Left and Foot-Bin are always satisfiable in Finnish
+# but we assign violation marks as not to depend on that knowledge.
+
+# Main Stress: The primary stress in Finnish is on the first
+#              syllable. This is an inviolable constraint.
+
+define MainStress [B MSS ~$MSS];
+
+
+# Clash: No stress on adjacent syllables.
+
+define Clash SS -> ... {*} || SS B _ ;
+
+
+# Align-Left: The stressed syllable is initial in the foot.
+
+define AlignLeft SV -> ... {*} || .#. ~[?* "(" C*] _ ;
+
+
+# Foot-Bin: Feet are minimally bimoraic and maximally bisyllabic.
+
+define FootBin ["(" Light ")" | "(" S ["." S]^>1] -> ... {*} ;
+
+
+# Lapse: Every unstressed syllable must be adjacent to a stressed
+# syllable.
+
+define Lapse US -> ... {*} || [B US B] _ [B US B];
+
+
+# Non-Final: The final syllable is not stressed.
+
+define NonFinal SS -> ... {*} || _ ~$S .#.;
+
+
+# Stress-To-Weight: Stressed syllables are heavy.
+
+define StressToWeight [SS & Light] -> ... {*} || _ ")"| E;
+
+
+# License-σ: Syllables are parsed into feet.
+
+    define Parse S -> ... {*} || E _ E;
+
+
+# All-Ft-Left: Every foot starts at the beginning of a
+#              prosodic word.
+
+define AllFeetFirst [ "(" -> ...   {*} || .#. SB _
+                                      .o.
+                  "(" -> ... {*}^2 || .#. SB^2 _
+                                      .o.
+                  "(" -> ... {*}^3 || .#. SB^3 _
+                                      .o.
+                  "(" -> ... {*}^4 || .#. SB^4 _
+                                      .o.
+                  "(" -> ... {*}^5 || .#. SB^5 _
+                                      .o.
+                  "(" -> ... {*}^6 || .#. SB^6 _
+                                      .o.
+                  "(" -> ... {*}^7 || .#. SB^7 _
+                                      .o.
+                 "(" -> ... {*}^8 || .#. SB^8 _ ];
+
+########################## Evaluation ######################################
+
+echo ### Computing the prosody for FinnWords
+
+# Some constraints can always be satisfied; some constraints are
+# violated many times. The limits have been chosen to produce
+# a unique winner in all the 25 test cases in FinnWords.
+
+regex [FinnWords .o. Gen
+       .o. MainStress
+       .o. Clash .O. Viol0 .o. Pardon
+       .o. AlignLeft .O. Viol0
+       .o. FootBin .O. Viol0 .o. Pardon
+       .o. Lapse .O. Viol3 .O. Viol2 .O. Viol1 .O. Viol0 .o. Pardon
+       .o. NonFinal .O. Viol0 .o. Pardon
+       .o. StressToWeight .O. Viol3 .O. Viol2 .O. Viol1 .O. Viol0 .o. Pardon
+       .o. Parse .O. Viol3 .O. Viol2 .O. Viol1 .O. Viol0 .o. Pardon
+       .o. AllFeetFirst .O. Viol15 .O. Viol14 .O. Viol13
+           Viol12 .O. Viol11 .O. Viol10 .O. Viol9 .O. Viol8 .O. Viol7 .O.
+           Viol6  .O. Viol5  .O. Viol4  .O. Viol3 .O. Viol2 .O. Viol1 .O.
+           Viol0 .o. Pardon
+      ];
+
+print lower-words
+
+# This final command produces the following output. The two errors
+# indicate that there is a problem in Kiparsky's analysis.
+
+# (ón.nit).(tè.le).(mà.ni).kin
+# (ó.pis).(kè.li).ja
+# (ó.pet).ta.(màs.sa)
+# (íl.moit).(tàu.tu).mi.(sès.ta)
+# (íl.moit).(tàu.tu).(mì.nen)
+# (ér.go).(nò.mi).a
+# (vói.mis).te.(lùt.te).le.(màs.ta)
+# (strúk.tu).ra.(lìs.mi)
+# (ré.pe).(ä̀.mä)
+# (rá.vin).(tò.lat)
+# (rá.kas).ta.(jàt.ta).ri.(àn.sa)
+# (pú.he).li.(mìs.ta).ni
+# (pú.he).li.(mèl.la).ni
+# (pé.ri).jä
+# (mä́.ki)
+# (mér.ko).(nò.min)
+# (má.te).ma.(tìik.ka)
+# (kú.nin).gas
+# (kái.nos).(tè.li).jat
+# (ká.las).te.(lèm.me)  
+# (ká.las).te.(lè.mi).nen  <==== Error
+# (ká.las).(tè.let)
+# (jä́r.jes).tel.(mä̀l.li).syy.(dèl.lä).ni  <===== Error
+# (jä́r.jes).(tèl.mät).tö.(mỳy.des).(tä̀n.sä)
+# (jä́r.jes).(tèl.mäl).(lìs.tä).mä.(tö̀n.tä)
+         

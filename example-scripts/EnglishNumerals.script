@@ -1,0 +1,52 @@
+# Numeral.script
+
+# Copyright (C) 2004  Lauri Karttunen
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+
+#
+# This xfst script constructs the language of English numerals from
+# "one" to "ninety-nine".
+
+# From "one" through "nine":
+
+define OneToNine [{one} | {two}   | {three} | {four}  | {five} |
+                  {six} | {seven} | {eight} | {nine}];
+
+# It is convenient to define a set of prefixes that can be
+# followed either by "teen" or by "ty".
+
+define TeenTen [{thir}  | {fif}  | {six}   |
+                {seven} | {eigh} | {nine}];
+
+# From "ten" to "nineteen"
+
+define Teens [{ten} | {eleven} | {twelve} |
+              [TeenTen | {four}] {teen}];
+
+# Let's define a set of prefixes that can be followed by "ty".
+
+define TenStem [TeenTen | {twen} | {for}];
+
+# TenStem is followed either by "ty" or by ty-"
+# and a number from OneToNine.
+
+define Tens [TenStem {ty} ({-} OneToNine)];
+
+define OneToNinetyNine [ OneToNine | Teens | Tens ];
+
+# Done. Let's push the result on the stack and print
+# some examples.
+
+push OneToNinetyNine
+
+echo
+echo Printing random examples ...
+print random-words
